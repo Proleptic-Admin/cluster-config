@@ -12,3 +12,4 @@ resources:
   - nginx-ingress.yaml
   - quotas.yaml
   - rbac.yaml
+  - storage-classes.yaml
