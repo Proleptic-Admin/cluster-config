@@ -1,0 +1,89 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keda
+  namespace: argocd
+spec:
+  project: platform
+  
+  source:
+    repoURL: https://kedacore.github.io/charts
+    chart: keda
+    targetRevision: 2.12.1
+    helm:
+      releaseName: keda
+      values: |
+        replicaCount: 2
+        
+        image:
+          keda:
+            tag: 2.12.1
+          metricsApiServer:
+            tag: 2.12.1
+          webhooks:
+            tag: 2.12.1
+            
+        crds:
+          install: true
+          
+        podDisruptionBudget:
+          operator:
+            enabled: true
+            minAvailable: 1
+          metricServer:
+            enabled: true
+            minAvailable: 1
+          webhooks:
+            enabled: true
+            minAvailable: 1
+            
+        prometheus:
+          metricServer:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+          operator:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+              
+        resources:
+          operator:
+            limits:
+              cpu: 1000m
+              memory: 1000Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          metricServer:
+            limits:
+              cpu: 1000m
+              memory: 1000Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          webhooks:
+            limits:
+              cpu: 50m
+              memory: 100Mi
+            requests:
+              cpu: 10m
+              memory: 10Mi
+              
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: keda
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

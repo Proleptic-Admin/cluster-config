@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-ingress
+spec:
+  source:
+    helm:
+      values: |
+        controller:
+          replicaCount: 1
+          service:
+            type: NodePort
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          metrics:
+            enabled: false
+          config:
+            use-forwarded-headers: "true"
+            compute-full-forwarded-for: "true"

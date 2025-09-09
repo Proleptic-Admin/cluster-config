@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keda
+spec:
+  source:
+    helm:
+      values: |
+        replicaCount: 1
+        prometheus:
+          metricServer:
+            enabled: false
+          operator:
+            enabled: false
+        resources:
+          operator:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          metricServer:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi

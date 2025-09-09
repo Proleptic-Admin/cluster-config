@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../apps/platform/apps
+
+patches:
+  - path: nginx-ingress-prod.yaml
+    target:
+      kind: Application
+      name: nginx-ingress
+  - path: cert-manager-prod.yaml
+    target:
+      kind: Application
+      name: cert-manager
+  - path: external-dns-prod.yaml
+    target:
+      kind: Application
+      name: external-dns
+  - path: keda-prod.yaml
+    target:
+      kind: Application
+      name: keda
+
+namespace: argocd
+
+namePrefix: prod-
+
+labels:
+  - pairs:
+      environment: prod
+      cluster: production
