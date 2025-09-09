@@ -6,7 +6,7 @@ metadata:
   namespace: argocd
 spec:
   project: platform
-  
+
   source:
     repoURL: https://prometheus-community.github.io/helm-charts
     chart: alertmanager
@@ -15,18 +15,18 @@ spec:
       releaseName: alertmanager
       valueFiles:
         - values.yaml
-      
+
   destination:
     server: https://kubernetes.default.svc
     namespace: observability
-    
+
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-    - CreateNamespace=true
-    - ServerSideApply=true
+      - CreateNamespace=true
+      - ServerSideApply=true
     retry:
       limit: 5
       backoff:

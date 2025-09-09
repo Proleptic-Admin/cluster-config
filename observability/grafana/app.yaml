@@ -6,7 +6,7 @@ metadata:
   namespace: argocd
 spec:
   project: platform
-  
+
   source:
     repoURL: https://grafana.github.io/helm-charts
     chart: grafana
@@ -15,18 +15,18 @@ spec:
       releaseName: grafana
       valueFiles:
         - values.yaml
-      
+
   destination:
     server: https://kubernetes.default.svc
     namespace: observability
-    
+
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-    - CreateNamespace=true
-    - ServerSideApply=true
+      - CreateNamespace=true
+      - ServerSideApply=true
     retry:
       limit: 5
       backoff:
