@@ -1,0 +1,120 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: observability-appset
+  namespace: argocd
+spec:
+  generators:
+  - matrix:
+      generators:
+      - clusters:
+          selector:
+            matchExpressions:
+            - key: tier
+              operator: In
+              values: ["shared", "dedicated"]
+      - list:
+          elements:
+          - component: victoria-metrics
+            chart: victoria-metrics-k8s-stack
+            repo: https://victoriametrics.github.io/helm-charts
+            version: 0.21.4
+          - component: grafana
+            chart: grafana
+            repo: https://grafana.github.io/helm-charts
+            version: 7.0.19
+          - component: alertmanager
+            chart: alertmanager
+            repo: https://prometheus-community.github.io/helm-charts
+            version: 1.7.0
+  template:
+    metadata:
+      name: '{{name}}-{{component}}'
+      namespace: argocd
+    spec:
+      project: platform
+      
+      source:
+        repoURL: '{{repo}}'
+        chart: '{{chart}}'
+        targetRevision: '{{version}}'
+        helm:
+          releaseName: '{{component}}'
+          valueFiles:
+          - $values/observability/{{component}}/values.yaml
+        
+      sources:
+      - repoURL: '{{repo}}'
+        chart: '{{chart}}'
+        targetRevision: '{{version}}'
+        helm:
+          releaseName: '{{component}}'
+          valueFiles:
+          - $values/observability/{{component}}/values.yaml
+      - repoURL: https://github.com/Proleptic-Admin/cluster-config
+        targetRevision: HEAD
+        ref: values
+        
+      destination:
+        server: '{{server}}'
+        namespace: observability
+        
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+---
+# Separate ApplicationSet for policies (plain Kubernetes manifests)
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: observability-policies-appset
+  namespace: argocd
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchExpressions:
+        - key: tier
+          operator: In
+          values: ["shared", "dedicated"]
+  template:
+    metadata:
+      name: '{{name}}-observability-policies'
+      namespace: argocd
+    spec:
+      project: platform
+      
+      source:
+        repoURL: https://github.com/Proleptic-Admin/cluster-config
+        targetRevision: HEAD
+        path: observability/policies
+        
+      destination:
+        server: '{{server}}'
+        namespace: observability
+        
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m

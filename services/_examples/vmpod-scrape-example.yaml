@@ -1,0 +1,84 @@
+---
+# Example VMPodScrape for monitoring application pods
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: example-app-pods
+  namespace: default
+spec:
+  # Select pods with specific labels
+  selector:
+    matchLabels:
+      app: example-app
+  
+  # Scrape configuration
+  podMetricsEndpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+    # Add additional labels to metrics
+    relabelConfigs:
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      targetLabel: pod_name
+    - sourceLabels: [__meta_kubernetes_namespace]
+      targetLabel: namespace
+    - sourceLabels: [__meta_kubernetes_pod_label_version]
+      targetLabel: version
+    # Drop high cardinality labels
+    - sourceLabels: [__name__]
+      regex: 'go_gc_.*'
+      action: drop
+    - sourceLabels: [__name__]
+      regex: 'go_memstats_.*'
+      action: drop
+  
+  # Attach additional labels to all metrics from this scrape
+  jobLabel: "example-app"
+  attachMetadata:
+    node: true
+    pod: true
+
+---
+# Example VMServiceScrape for monitoring services  
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: example-app-service
+  namespace: default
+spec:
+  # Select services with specific labels
+  selector:
+    matchLabels:
+      app: example-app
+      
+  # Endpoints to scrape
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+    # Metric relabeling
+    metricRelabelConfigs:
+    - sourceLabels: [__name__]
+      regex: 'http_request_duration_seconds_bucket'
+      targetLabel: __tmp_histogram
+      replacement: '1'
+    - sourceLabels: [__tmp_histogram]
+      regex: '1'
+      action: drop
+    # Add service labels
+    relabelConfigs:
+    - sourceLabels: [__meta_kubernetes_service_name]
+      targetLabel: service_name
+    - sourceLabels: [__meta_kubernetes_namespace]
+      targetLabel: namespace
+    - sourceLabels: [__meta_kubernetes_service_label_version]
+      targetLabel: version
+  
+  # Additional configuration
+  jobLabel: "example-app-service"
+  namespaceSelector:
+    matchNames:
+    - default
+    - production

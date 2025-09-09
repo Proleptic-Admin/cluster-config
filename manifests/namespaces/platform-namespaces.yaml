@@ -51,3 +51,12 @@ metadata:
   labels:
     name: production
     environment: prod
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    name: observability
+    platform: "true"

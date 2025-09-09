@@ -1,0 +1,13 @@
+---
+apiVersion: 1
+datasources:
+  - name: VictoriaMetrics
+    type: prometheus
+    url: http://victoria-metrics-k8s-stack-vmsingle.observability:8428
+    access: proxy
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      queryTimeout: 300s
+      timeInterval: 30s

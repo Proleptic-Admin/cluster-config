@@ -1,0 +1,79 @@
+---
+# Victoria Metrics K8s Stack Configuration
+victoria-metrics-k8s-stack:
+  # Enable components
+  victoria-metrics-operator:
+    enabled: true
+
+  vmsingle:
+    enabled: true
+    spec:
+      retentionPeriod: "30d"
+      storage:
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 50Gi
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+
+  vmagent:
+    enabled: true
+    spec:
+      externalLabels:
+        cluster: "CLUSTER_NAME_PLACEHOLDER"
+        env: "ENV_PLACEHOLDER"
+      remoteWrite:
+        - url: >-
+            http://victoria-metrics-k8s-stack-vmsingle.observability:8428/api/v1/write
+      # Drop noisy labels to reduce cardinality
+      relabelConfigs:
+        - source_labels: [__name__]
+          regex: 'go_.*'
+          action: drop
+        - source_labels: [__name__]
+          regex: 'prometheus_.*'
+          action: drop
+        - source_labels: [__name__]
+          regex: 'vm_.*_duration_seconds_bucket'
+          action: drop
+
+  vmalert:
+    enabled: true
+    spec:
+      datasource:
+        url: >-
+          http://victoria-metrics-k8s-stack-vmsingle.observability:8428
+      remoteWrite:
+        url: >-
+          http://victoria-metrics-k8s-stack-vmsingle.observability:8428
+
+  alertmanager:
+    enabled: true
+    spec:
+      configSecret: "alertmanager-config"
+      storage:
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 10Gi
+
+  grafana:
+    enabled: false  # We'll deploy Grafana separately
+
+# S3 backup configuration placeholders
+vmbackup:
+  enabled: false
+  # Uncomment and configure when S3 backup is needed
+  # destination: "s3://BUCKET_NAME_PLACEHOLDER/victoria-metrics-backup"
+  # credentialsSecret:
+  #   name: "s3-credentials"
+  #   accessKeyName: "S3_ACCESS_KEY_PLACEHOLDER"
+  #   secretKeyName: "S3_SECRET_KEY_PLACEHOLDER"
+  # s3Config:
+  #   endpoint: "S3_ENDPOINT_PLACEHOLDER"
