@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+spec:
+  source:
+    helm:
+      values: |
+        replicaCount: 3
+        webhook:
+          replicaCount: 2
+        cainjector:
+          replicaCount: 2
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        prometheus:
+          enabled: true
+          servicemonitor:
+            enabled: true
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - cert-manager
+                topologyKey: kubernetes.io/hostname

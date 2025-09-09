@@ -1,0 +1,84 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-dns
+  namespace: argocd
+spec:
+  project: platform
+  
+  source:
+    repoURL: https://kubernetes-sigs.github.io/external-dns/
+    chart: external-dns
+    targetRevision: 1.13.1
+    helm:
+      releaseName: external-dns
+      values: |
+        provider: designate
+        
+        sources:
+          - service
+          - ingress
+          - crd
+          
+        # Designate specific configuration
+        designate:
+          customCA:
+            enabled: false
+            
+        env:
+          - name: OS_AUTH_URL
+            valueFrom:
+              secretKeyRef:
+                name: external-dns-designate-credentials
+                key: OS_AUTH_URL
+          - name: OS_REGION_NAME
+            valueFrom:
+              secretKeyRef:
+                name: external-dns-designate-credentials
+                key: OS_REGION_NAME
+          - name: OS_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: external-dns-designate-credentials
+                key: OS_USERNAME
+          - name: OS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: external-dns-designate-credentials
+                key: OS_PASSWORD
+          - name: OS_PROJECT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: external-dns-designate-credentials
+                key: OS_PROJECT_NAME
+          - name: OS_USER_DOMAIN_NAME
+            valueFrom:
+              secretKeyRef:
+                name: external-dns-designate-credentials
+                key: OS_USER_DOMAIN_NAME
+                
+        metrics:
+          enabled: true
+          serviceMonitor:
+            enabled: true
+            
+        policy: sync
+        registry: txt
+        txtOwnerId: "external-dns"
+        
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-dns
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

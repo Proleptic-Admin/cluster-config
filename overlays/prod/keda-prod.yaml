@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keda
+spec:
+  source:
+    helm:
+      values: |
+        replicaCount: 3
+        prometheus:
+          metricServer:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+          operator:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+        resources:
+          operator:
+            limits:
+              cpu: 1000m
+              memory: 1000Mi
+            requests:
+              cpu: 200m
+              memory: 200Mi
+          metricServer:
+            limits:
+              cpu: 1000m
+              memory: 1000Mi
+            requests:
+              cpu: 200m
+              memory: 200Mi
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                    - keda-operator
+                topologyKey: kubernetes.io/hostname

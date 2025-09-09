@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-ingress
+  namespace: argocd
+spec:
+  project: platform
+  
+  source:
+    repoURL: https://kubernetes.github.io/ingress-nginx
+    chart: ingress-nginx
+    targetRevision: 4.8.3
+    helm:
+      releaseName: nginx-ingress
+      values: |
+        controller:
+          replicaCount: 2
+          service:
+            type: LoadBalancer
+          metrics:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+          config:
+            use-forwarded-headers: "true"
+            compute-full-forwarded-for: "true"
+            use-proxy-protocol: "true"
+          
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nginx-ingress
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

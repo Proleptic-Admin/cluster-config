@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+spec:
+  project: platform
+  
+  source:
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: v1.13.2
+    helm:
+      releaseName: cert-manager
+      values: |
+        installCRDs: true
+        
+        global:
+          leaderElection:
+            namespace: cert-manager
+            
+        replicaCount: 2
+        
+        webhook:
+          replicaCount: 2
+          
+        cainjector:
+          replicaCount: 2
+          
+        prometheus:
+          enabled: true
+          servicemonitor:
+            enabled: true
+            
+        # Enable DNS-01 challenge support
+        extraArgs:
+          - --dns01-recursive-nameservers-only
+          - --dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53
+          
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

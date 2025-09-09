@@ -1,0 +1,62 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-cert-manager
+  namespace: cert-manager
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cert-manager
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: nginx-ingress
+  - from: []
+    ports:
+    - protocol: TCP
+      port: 9402  # metrics
+  egress:
+  - {} # Allow all egress for ACME challenges
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-external-dns
+  namespace: external-dns
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: external-dns
+  policyTypes:
+  - Egress
+  egress:
+  - {} # Allow all egress for DNS updates
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-keda
+  namespace: keda
+spec:
+  podSelector:
+    matchLabels:
+      app: keda-operator
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from: []
+    ports:
+    - protocol: TCP
+      port: 8080  # metrics
+    - protocol: TCP
+      port: 9443  # webhook
+  egress:
+  - {} # Allow all egress for metrics collection
